@@ -1,0 +1,57 @@
+body {
+    padding: 0;
+    margin: 0;
+}
+html, body, #map {
+    height: 60vh;
+    width: 100%;
+}
+#old{
+    width: 30vw;
+    height: 35px;
+    position: relative;
+
+}
+
+#gender{
+    width: 30vw;
+    height: 35px;
+    position: relative;
+}
+#tytle{
+    width: 90vw;
+    height: 35px;
+    position: relative;
+        top: 15px;
+    font-size: 20px;
+}
+.tytle::placeholder{
+    color:#0000005b;
+    font-size: 20px;
+    font-weight: 300;
+    font-family: sans-serif;
+}
+#naiyo{
+    width: 90vw;
+    height: 70px;
+    position: relative;
+        top: 25px;
+    font-size: 20px;
+    vertical-align: text-top;
+    margin: 0 auto;
+}
+.naiyo::placeholder{
+    vertical-align: top;
+    color:#0000005b;
+    font-size: 20px;
+    font-weight: 300;
+    font-family: sans-serif;
+}
+#btn{
+    position: relative;
+        left:3vw;
+        top:50px;
+    font-size: 20px;
+    font-family: sans-serif;
+}
+
