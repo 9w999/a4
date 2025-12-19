@@ -1,6 +1,3 @@
 Flask
 gunicorn
-requests
-fastapi
-uvicorn
 flask-socketio
