@@ -2,35 +2,23 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>手伝い募集</title>
 
-    <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js" defer></script>
 
     <style>
-        body {
-            padding: 0;
-            margin: 0;
-            font-family: sans-serif;
-        }
-        #map {
-            height: 60vh;
-            width: 100%;
-        }
+        body { margin: 0; padding: 0; font-family: sans-serif; }
+        #map { height: 60vh; width: 100%; }
         select, input {
             width: 90vw;
             height: 35px;
             font-size: 18px;
             margin: 10px;
         }
-        #btn {
-            margin-left: 10px;
-            margin-top: 20px;
-            font-size: 20px;
-        }
+        #btn { margin-left: 10px; margin-top: 20px; font-size: 20px; }
     </style>
 </head>
 
@@ -82,50 +70,74 @@
     <button id="btn">募集する</button>
 
     <script>
-        // --- マップ初期化 ---
+        const API_URL = "http://localhost:3000/requests";
         let map;
+        let markers = {};
+
         document.addEventListener("DOMContentLoaded", () => {
-            map = L.map('map').setView([35.7006, 139.4999], 15);
+            map = L.map('map').setView([35.7, 139.49], 15);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19
             }).addTo(map);
+
+            // 3秒ごとに更新
+            setInterval(fetchRequests, 3000);
         });
 
-        // --- 詳細ボタンの動作 ---
-        function hyouji() {
-            alert("詳細ボタンが押されました");
+        // --- API からデータ取得 ---
+        async function fetchRequests() {
+            const res = await fetch(API_URL);
+            const data = await res.json();
+
+            data.forEach(item => {
+                if (!markers[item.id]) {
+                    addMarker(item);
+                }
+            });
+        }
+
+        // --- マーカー追加 ---
+        function addMarker(item) {
+            const marker = L.marker([item.lat, item.lng]).addTo(map);
+
+            marker.bindPopup(`
+                <p><b>年齢：</b>${item.age}</p>
+                <p><b>性別：</b>${item.gender}</p>
+                <p><b>タイトル：</b>${item.title}</p>
+                <p><b>内容：</b>${item.naiyo}</p>
+            `);
+
+            markers[item.id] = marker;
         }
 
         // --- 募集ボタン ---
-        function buttonClick() {
+        document.getElementById("btn").addEventListener("click", () => {
+            navigator.geolocation.getCurrentPosition(success, error);
+        });
+
+        async function success(position) {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+
             const age = document.getElementById("old").value;
             const gender = document.getElementById("gender").value;
             const title = document.getElementById("title").value;
             const naiyo = document.getElementById("naiyo").value;
 
-            const marker = L.marker([35.70062558129799, 139.49990618891738]).addTo(map);
-
-            marker.bindPopup(`
-                <div>
-                    <p><b>年齢：</b>${age}</p>
-                    <p><b>性別：</b>${gender}</p>
-                    <p><b>タイトル：</b>${title}</p>
-                    <p><b>内容：</b>${naiyo}</p>
-                    <button id="shosai">詳細</button>
-                </div>
-            `);
-
-            // ポップアップが開いたときにイベントを登録
-            marker.on("popupopen", () => {
-                const shosaiBtn = document.getElementById("shosai");
-                if (shosaiBtn) {
-                    shosaiBtn.addEventListener("click", hyouji);
-                }
+            // API に送信
+            await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ lat, lng, age, gender, title, naiyo })
             });
+
+            alert("募集を送信しました");
         }
 
-        document.getElementById("btn").addEventListener("click", buttonClick);
+        function error() {
+            alert("位置情報が取得できませんでした");
+        }
     </script>
 </body>
 </html>
