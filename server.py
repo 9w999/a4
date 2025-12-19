@@ -1,6 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request
+from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'secret!'
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # サンプルのユーザー情報
 users = {
@@ -19,7 +22,7 @@ def login():
 
     # ユーザー認証
     if username in users and users[username] == password:
-        return render_template('index.html', message=f"Welcome, {username}!")
+        return render_template('index.html', username=username)
     else:
         return render_template('result.html', message="Login failed. Please check your username and password.")
 
@@ -29,16 +32,19 @@ def register():
         username = request.form['username']
         password = request.form['password']
 
-        # ユーザーが既に存在しないかチェック
         if username in users:
-            return render_template('result.html', message="Username already exists. Please choose a different username.")
+            return render_template('result.html', message="Username already exists.")
 
-        # 新しいユーザーを登録
         users[username] = password
-        return render_template('result.html', message="Registration successful! You can now log in.")
+        return render_template('result.html', message="Registration successful!")
 
     return render_template('register.html')
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# --- WebSocket（リアルタイム共有） ---
+@socketio.on('send_location')
+def handle_location(data):
+    # 全クライアントにブロードキャスト
+    emit('new_marker', data, broadcast=True)
 
+if __name__ == '__main__':
+    socketio.run(app, debug=True)
