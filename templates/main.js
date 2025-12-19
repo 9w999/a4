@@ -6,6 +6,5 @@ L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 
 
-let apikey = "rnd_V5Z3YYWfuh1qWU9iQtGAGjF6FpGg"
-
+let apikey = "b5c83b29-0210-4ffd-98d1-006e854bbc2f"
 
