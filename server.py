@@ -3,9 +3,9 @@ from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
-# サンプルのユーザー情報
+# サンプルユーザー
 users = {
     "user1": "password1",
     "user2": "password2"
@@ -20,7 +20,6 @@ def login():
     username = request.form['username']
     password = request.form['password']
 
-    # ユーザー認証
     if username in users and users[username] == password:
         return render_template('index.html', username=username)
     else:
@@ -43,8 +42,7 @@ def register():
 # --- WebSocket（リアルタイム共有） ---
 @socketio.on('send_location')
 def handle_location(data):
-    # 全クライアントにブロードキャスト
     emit('new_marker', data, broadcast=True)
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    socketio.run(app, debug=False)
