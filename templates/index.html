@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>手伝い募集</title>
 
@@ -11,26 +11,15 @@
     <script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js" defer></script>
 
     <style>
-        body {
-            padding: 0;
-            margin: 0;
-            font-family: sans-serif;
-        }
-        #map {
-            height: 60vh;
-            width: 100%;
-        }
+        body { margin: 0; padding: 0; font-family: sans-serif; }
+        #map { height: 60vh; width: 100%; }
         select, input {
             width: 90vw;
             height: 35px;
             font-size: 18px;
             margin: 10px;
         }
-        #btn {
-            margin-left: 10px;
-            margin-top: 20px;
-            font-size: 20px;
-        }
+        #btn { margin-left: 10px; margin-top: 20px; font-size: 20px; }
     </style>
 </head>
 
@@ -82,29 +71,38 @@
     <button id="btn">募集する</button>
 
     <script>
-        // --- マップ初期化 ---
         let map;
+
+        // --- マップ初期化 ---
         document.addEventListener("DOMContentLoaded", () => {
-            map = L.map('map').setView([35.7006, 139.4999], 15);
+            map = L.map('map').setView([35.7, 139.49], 15);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19
             }).addTo(map);
         });
 
-        // --- 詳細ボタンの動作 ---
+        // --- 詳細ボタン ---
         function hyouji() {
             alert("詳細ボタンが押されました");
         }
 
         // --- 募集ボタン ---
         function buttonClick() {
+            // 位置情報取得
+            navigator.geolocation.getCurrentPosition(success, error);
+        }
+
+        function success(position) {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+
             const age = document.getElementById("old").value;
             const gender = document.getElementById("gender").value;
             const title = document.getElementById("title").value;
             const naiyo = document.getElementById("naiyo").value;
 
-            const marker = L.marker([35.70062558129799, 139.49990618891738]).addTo(map);
+            const marker = L.marker([lat, lng]).addTo(map);
 
             marker.bindPopup(`
                 <div>
@@ -116,13 +114,20 @@
                 </div>
             `);
 
-            // ポップアップが開いたときにイベントを登録
+            // ポップアップが開いたときにイベント登録
             marker.on("popupopen", () => {
                 const shosaiBtn = document.getElementById("shosai");
                 if (shosaiBtn) {
                     shosaiBtn.addEventListener("click", hyouji);
                 }
             });
+
+            // マップをその位置に移動
+            map.setView([lat, lng], 16);
+        }
+
+        function error() {
+            alert("位置情報が取得できませんでした");
         }
 
         document.getElementById("btn").addEventListener("click", buttonClick);
