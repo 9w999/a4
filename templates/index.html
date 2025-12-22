@@ -80,7 +80,23 @@
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 19
             }).addTo(map);
+
+            // ★ ページ読み込み時に位置情報を取得
+            navigator.geolocation.getCurrentPosition(initSuccess, error);
         });
+
+        // ★ 初期位置設定
+        function initSuccess(position) {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+
+            // 現在地にマップを移動
+            map.setView([lat, lng], 16);
+
+            // 現在地にマーカーを置く（任意）
+            L.marker([lat, lng]).addTo(map)
+                .bindPopup("現在地").openPopup();
+        }
 
         // --- 詳細ボタン ---
         function hyouji() {
@@ -89,7 +105,6 @@
 
         // --- 募集ボタン ---
         function buttonClick() {
-            // 位置情報取得
             navigator.geolocation.getCurrentPosition(success, error);
         }
 
@@ -114,7 +129,6 @@
                 </div>
             `);
 
-            // ポップアップが開いたときにイベント登録
             marker.on("popupopen", () => {
                 const shosaiBtn = document.getElementById("shosai");
                 if (shosaiBtn) {
@@ -122,7 +136,6 @@
                 }
             });
 
-            // マップをその位置に移動
             map.setView([lat, lng], 16);
         }
 
