@@ -31,7 +31,7 @@ def register():
 
         # ユーザーが既に存在しないかチェック
         if username in users:
-            return render_template('result.html', message="Username already exists. Please choose a different username.")
+            return render_template('result.html', message="ユーザー名は既に存在します。別のユーザー名をお選びください。")
 
         # 新しいユーザーを登録
         users[username] = password
@@ -41,5 +41,6 @@ def register():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
