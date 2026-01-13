@@ -94,11 +94,6 @@
             map.setView([lat, lng], 16);
         }
 
-        // --- 詳細ボタン ---
-        function hyouji() {
-            alert("詳細ボタンが押されました");
-        }
-
         // --- 募集ボタン ---
         function buttonClick() {
             navigator.geolocation.getCurrentPosition(success, error);
@@ -121,7 +116,6 @@
                     <p><b>性別：</b>${gender}</p>
                     <p><b>タイトル：</b>${title}</p>
                     <p><b>内容：</b>${naiyo}</p>
-                    <button id="shosai">詳細</button>
                 </div>
             `);
 
@@ -143,4 +137,5 @@
     </script>
 </body>
 </html>
+
 
