@@ -21,7 +21,7 @@ def login():
     if username in users and users[username] == password:
         return render_template('index.html', message=f"Welcome, {username}!")
     else:
-        return render_template('result.html', message="Login failed. Please check your username and password.")
+        return render_template('result.html', message="ログインに失敗しました。ユーザー名とパスワードをご確認ください。")
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -41,4 +41,5 @@ def register():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
