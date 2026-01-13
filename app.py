@@ -35,12 +35,13 @@ def register():
 
         # 新しいユーザーを登録
         users[username] = password
-        return render_template('result.html', message="Registration successful! You can now log in.")
+        return render_template('result.html', message="登録が完了しました！ログインできます。")
 
     return render_template('register.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
 
