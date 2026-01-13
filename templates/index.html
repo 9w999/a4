@@ -9,6 +9,7 @@
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css">
     <script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js" defer></script>
+    <script src="js/leaflet.sprite.js"></script>
 
     <style>
         body { margin: 0; padding: 0; font-family: sans-serif; }
@@ -119,7 +120,7 @@
             marker.on("popupopen", () => {
                 const shoninBtn = document.getElementById("shonin");
                 if (shoninBtn) {
-                    shoninBtn.addEventListener("click", doshonin);
+                    shoninBtn.addEventListener("click", colorchange);
                 }
             });
 
@@ -130,14 +131,15 @@
             alert("位置情報が取得できませんでした");
         }
 
-        function doshonin(){
-            alert("aiue")
+        function colorchange(){
+            L.marker({icon: L.spriteIcon('red')}).addTo.(map);
         }
 
         document.getElementById("btn").addEventListener("click", buttonClick);
     </script>
 </body>
 </html>
+
 
 
 
