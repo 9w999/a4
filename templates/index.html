@@ -116,12 +116,7 @@
                 </div>
             `);
 
-            marker.on("popupopen", () => {
-                const shoninBtn = document.getElementById("shonin");
-                if (shoninBtn) {
-                    shoninBtn.addEventListener("click", colorchange);
-                }
-            });
+
 
             map.setView([lat, lng], 16);
         }
@@ -134,6 +129,7 @@
     </script>
 </body>
 </html>
+
 
 
 
