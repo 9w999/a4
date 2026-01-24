@@ -112,10 +112,15 @@
                     <p><b>性別：</b>${gender}</p>
                     <p><b>タイトル：</b>${title}</p>
                     <p><b>内容：</b>${naiyo}</p>
-                    <input type=button id="shonin" value="承認する">
+                    <input type=button id="shoninbtn" value="承認する">
                 </div>
             `);
 
+        var shonin = document.getElementById(shoninbtn);
+        var color = function(){
+            marker.setIcon(redIcon);
+        }
+        shonin.onclick = color;
 
 
             map.setView([lat, lng], 16);
@@ -129,6 +134,7 @@
     </script>
 </body>
 </html>
+
 
 
 
