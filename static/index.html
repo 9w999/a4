@@ -1,169 +1,303 @@
-<!DOCTYPE html>
+<!DOCTYPE HTML>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>地域お手伝いマップ</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>高齢者トラブル解決アプリケーション</title>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-<style>
-body {
-    margin: 0;
-    font-family: system-ui, sans-serif;
-    background: #f4f6f8;
-}
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-header {
-    padding: 12px;
-    font-weight: bold;
-    text-align: center;
-    background: #4caf50;
-    color: #fff;
-}
-
-#map {
-    height: 55vh;
-}
-
-.card {
-    background: #fff;
-    margin: 12px;
-    padding: 16px;
-    border-radius: 14px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-label {
-    display: block;
-    font-size: 14px;
-    margin-top: 10px;
-}
-
-select, input {
-    width: 100%;
-    height: 40px;
-    font-size: 16px;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    padding: 4px 8px;
-}
-
-button {
-    width: 100%;
-    margin-top: 16px;
-    height: 44px;
-    font-size: 17px;
-    font-weight: bold;
-    border-radius: 10px;
-    border: none;
-    color: #fff;
-    cursor: pointer;
-}
-
-.btn-post { background: #4caf50; }
-.btn-approve { background: #ff9800; }
-.btn-complete { background: #2196f3; }
-
-.leaflet-popup-content {
-    font-size: 14px;
-}
-</style>
-</head>
-
-<body>
-
-<header>地域お手伝いマップ</header>
-<div id="map"></div>
-
-<div class="card">
-    <label>年齢</label>
-    <select id="age">
-        <option value="">選択してください</option>
-        <option>10代</option><option>20代</option><option>30代</option>
-        <option>40代</option><option>50代</option><option>60代</option>
-        <option>70代</option><option>80代</option><option>90代</option>
-    </select>
-
-    <label>性別</label>
-    <select id="gender">
-        <option value="">選択してください</option>
-        <option>男性</option><option>女性</option><option>その他</option>
-    </select>
-
-    <label>依頼内容</label>
-    <input id="naiyo" placeholder="例：荷物を運んでほしい">
-
-    <button class="btn-post" onclick="post()">募集する</button>
-</div>
-
-<script>
-let map;
-
-const red = new L.Icon({ iconUrl:'https://maps.google.com/mapfiles/ms/icons/red-dot.png', iconSize:[32,32] });
-const green = new L.Icon({ iconUrl:'https://maps.google.com/mapfiles/ms/icons/green-dot.png', iconSize:[32,32] });
-
-navigator.geolocation.getCurrentPosition(p => {
-    map = L.map("map").setView([p.coords.latitude, p.coords.longitude], 16);
-    init();
-}, () => {
-    map = L.map("map").setView([35.7,139.49], 15);
-    init();
-});
-
-function init(){
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
-    load();
-}
-
-function post(){
-    navigator.geolocation.getCurrentPosition(p=>{
-        fetch("/add",{
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({
-                lat:p.coords.latitude,
-                lng:p.coords.longitude,
-                age:age.value,
-                gender:gender.value,
-                naiyo:naiyo.value
-            })
-        }).then(()=>load());
-    });
-}
-
-function load(){
-    fetch("/list").then(r=>r.json()).then(data=>{
-        map.eachLayer(l=>{ if(l instanceof L.Marker) map.removeLayer(l); });
-
-        data.forEach((d,i)=>{
-            const icon = d.approved ? green : red;
-            const btn = d.approved
-                ? `<button class="btn-complete" onclick="finish(${i})">完了</button>`
-                : `<button class="btn-approve" onclick="approve(${i})">承認</button>`;
-
-            L.marker([d.lat,d.lng],{icon}).addTo(map)
-            .bindPopup(`
-                <b>${d.age} / ${d.gender}</b><br>
-                ${d.naiyo}<br>${btn}
-            `);
-        });
-    });
-}
-
-function approve(i){
-    fetch("/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({index:i})})
-    .then(()=>load());
-}
-
-function finish(i){
-    if(confirm("募集を完了しますか？")){
-        fetch("/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({index:i})})
-        .then(()=>load());
+  <style>
+    :root{
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --muted: #6b7280;
+      --accent: #2563eb; /* blue */
+      --accent-2: #10b981; /* green */
+      --danger: #ef4444; /* red */
+      --radius: 12px;
     }
-}
-</script>
 
+    *{box-sizing: border-box}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:var(--bg); color:#0f172a}
+
+    /* Header */
+    header.app-header{
+      display:flex;align-items:center;gap:12px;padding:12px 16px;background:linear-gradient(90deg,#ffffff 0%, #eef2ff 100%);box-shadow:0 2px 8px rgba(15,23,42,0.04);position:sticky;top:0;z-index:1000
+    }
+    .brand{
+      display:flex;align-items:center;gap:10px
+    }
+    .logo{
+      width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#7c3aed);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:18px
+    }
+    .title{font-weight:700;font-size:16px}
+    .subtitle{font-size:12px;color:var(--muted)}
+
+    /* Layout */
+    #map{height:56vh;width:100%;border-bottom:1px solid rgba(15,23,42,0.04)}
+
+    .controls{
+      max-width:980px;margin:14px auto;padding:0 14px
+    }
+
+    .form-card{
+      background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:0 8px 20px rgba(2,6,23,0.06);display:grid;grid-template-columns:repeat(2,1fr);gap:12px;align-items:end
+    }
+    .form-row{display:flex;flex-direction:column;gap:6px}
+    label{font-size:12px;color:var(--muted)}
+    select,input{height:40px;padding:8px;border-radius:8px;border:1px solid #e6e9ef;font-size:15px}
+    input::placeholder{color:#9aa4b2}
+
+    .full{grid-column:1/-1}
+
+    .submit-btn{background:var(--accent-2);border:none;color:white;padding:10px;border-radius:10px;font-weight:600;cursor:pointer;height:44px}
+    .submit-btn:active{transform:translateY(1px)}
+
+    /* Legend */
+    .legend{display:flex;gap:8px;align-items:center;margin-top:10px}
+    .legend .item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+    .dot{width:12px;height:12px;border-radius:50%}
+    .dot.red{background:#ef4444}
+    .dot.green{background:#10b981}
+
+    /* popup button style override */
+    .leaflet-popup-content-wrapper{border-radius:10px}
+    .popup-content{min-width:220px}
+    .popup-row{display:flex;gap:8px;align-items:center;margin-bottom:6px}
+    .popup-title{font-weight:700;font-size:15px;margin:0}
+    .popup-sub{font-size:13px;color:var(--muted);margin:0}
+
+    .popup-btn{display:block;width:100%;padding:8px;border-radius:8px;border:none;font-weight:600;cursor:pointer;margin-top:8px}
+    .btn-approve{background:#f59e0b;color:white}
+    .btn-complete{background:#10b981;color:white}
+    .btn-danger{background:#ef4444;color:white}
+
+    /* toast */
+    .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:22px;background:rgba(15,23,42,0.9);color:white;padding:10px 14px;border-radius:8px;z-index:2000;display:none}
+
+    /* responsive */
+    @media(max-width:720px){
+      .form-card{grid-template-columns:1fr}
+      .title{font-size:15px}
+      .logo{width:36px;height:36px}
+      #map{height:52vh}
+    }
+  </style>
+
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <div class="logo">手</div>
+      <div>
+        <div class="title">みんなで手伝い</div>
+        <div class="subtitle">近くの困りごとをすぐ見つける</div>
+      </div>
+    </div>
+  </header>
+
+  <div id="map"></div>
+
+  <div class="controls">
+    <div class="form-card" role="region" aria-label="募集フォーム">
+      <div class="form-row">
+        <label for="old">年齢</label>
+        <select id="old">
+          <option value="">選択してください</option>
+          <option value="10代">10代</option>
+          <option value="20代">20代</option>
+          <option value="30代">30代</option>
+          <option value="40代">40代</option>
+          <option value="50代">50代</option>
+          <option value="60代">60代</option>
+          <option value="70代">70代</option>
+          <option value="80代">80代</option>
+          <option value="90代">90代</option>
+          <option value="100代以降">100代以降</option>
+        </select>
+      </div>
+
+      <div class="form-row">
+        <label for="gender">性別</label>
+        <select id="gender">
+          <option value="">選択してください</option>
+          <option value="男性">男性</option>
+          <option value="女性">女性</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+
+      <div class="form-row full">
+        <label for="title">タイトル</label>
+        <select id="title">
+          <option value="">選択してください</option>
+          <option value="荷物運び">荷物運び</option>
+          <option value="道案内">道案内</option>
+          <option value="家の手伝い">家の手伝い</option>
+          <option value="ごみ捨て">ごみ捨て</option>
+          <option value="その他">その他</option>
+        </select>
+      </div>
+
+      <div class="form-row full">
+        <label for="naiyo">募集内容（任意）</label>
+        <input id="naiyo" type="text" placeholder="例：スーパーまで荷物を運んでほしい">
+      </div>
+
+      <div class="form-row full">
+        <button class="submit-btn" onclick="buttonClick()">募集する</button>
+      </div>
+
+    </div>
+
+    <div class="legend" aria-hidden="true">
+      <div class="item"><span class="dot red"></span>未承認</div>
+      <div class="item"><span class="dot green"></span>承認済み</div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Leaflet JS (no defer) -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // map & layers
+    let map;
+    const markersLayer = L.layerGroup();
+
+    // icons (use google map marker pngs for simplicity)
+    const redIcon = new L.Icon({
+      iconUrl: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+      iconSize: [32,32], iconAnchor: [16,32], popupAnchor: [0,-28]
+    });
+    const greenIcon = new L.Icon({
+      iconUrl: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
+      iconSize: [32,32], iconAnchor: [16,32], popupAnchor: [0,-28]
+    });
+
+    function toast(msg, timeout=2200){
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.style.display = 'block';
+      clearTimeout(el._t);
+      el._t = setTimeout(()=> el.style.display = 'none', timeout);
+    }
+
+    function initMap(){
+      map = L.map('map', {zoomControl:true, attributionControl:false}).setView([35.7,139.49], 15);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19}).addTo(map);
+      markersLayer.addTo(map);
+
+      // try to center on user
+      if(navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(pos => {
+          map.setView([pos.coords.latitude, pos.coords.longitude], 16);
+        }, ()=>{});
+      }
+
+      loadMarkers();
+
+      // refresh markers when map moves (throttle simple)
+      let t;
+      map.on('moveend', ()=>{ clearTimeout(t); t=setTimeout(loadMarkers,400); });
+    }
+
+    function clearMarkers(){ markersLayer.clearLayers(); }
+
+    function loadMarkers(){
+      fetch('/list').then(r=>r.json()).then(data=>{
+        clearMarkers();
+        data.forEach((item, index)=>{
+          const icon = item.approved ? greenIcon : redIcon;
+          const marker = L.marker([item.lat, item.lng], {icon});
+
+          // popup content (styled card)
+          const naiyoEsc = item.naiyo ? escapeHtml(item.naiyo) : '';
+          const pop = document.createElement('div');
+          pop.className = 'popup-content';
+
+          const t = document.createElement('p'); t.className='popup-title'; t.textContent = item.title || '（タイトルなし）';
+          const s = document.createElement('p'); s.className='popup-sub'; s.textContent = `${item.age || '年齢不明'} ・ ${item.gender || '性別不明'}`;
+          const d = document.createElement('p'); d.style.marginTop='8px'; d.style.marginBottom='0'; d.textContent = naiyoEsc || '(詳細なし)';
+
+          pop.appendChild(t);
+          pop.appendChild(s);
+          pop.appendChild(d);
+
+          const btnWrap = document.createElement('div'); btnWrap.style.marginTop='8px';
+
+          if(!item.approved){
+            const btn = document.createElement('button'); btn.className='popup-btn btn-approve'; btn.textContent='承認する';
+            btn.onclick = ()=>{ approve(index); };
+            btnWrap.appendChild(btn);
+          } else {
+            const btn = document.createElement('button'); btn.className='popup-btn btn-complete'; btn.textContent='完了';
+            btn.onclick = ()=>{ if(confirm('この募集を完了して削除しますか？')) complete(index); };
+            btnWrap.appendChild(btn);
+
+            const del = document.createElement('button'); del.className='popup-btn btn-danger'; del.textContent='通報/削除'; del.style.marginTop='6px';
+            del.onclick = ()=>{ if(confirm('本当に削除しますか？')) complete(index); };
+            // optional: only admin can see 'del' in future
+            // btnWrap.appendChild(del);
+          }
+
+          pop.appendChild(btnWrap);
+
+          marker.bindPopup(pop);
+          marker.addTo(markersLayer);
+        });
+      }).catch(err=>{
+        console.error('loadMarkers error', err);
+      });
+    }
+
+    function escapeHtml(s){ if(!s) return ''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+    function buttonClick(){
+      // gather
+      const old = document.getElementById('old').value;
+      const gender = document.getElementById('gender').value;
+      const title = document.getElementById('title').value;
+      const naiyo = document.getElementById('naiyo').value;
+
+      // simple validation
+      if(!title){ toast('タイトルを選んでください'); return; }
+
+      // get geolocation and post
+      if(navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(pos=>{
+          const payload = { lat: pos.coords.latitude, lng: pos.coords.longitude, age: old, gender: gender, title: title, naiyo: naiyo };
+          fetch('/add', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)})
+            .then(r=>r.json()).then(()=>{ toast('募集を投稿しました'); loadMarkers(); })
+            .catch(()=>toast('投稿に失敗しました'));
+        }, ()=>{
+          toast('位置情報を取得できませんでした（ブラウザの設定を確認）');
+        }, {timeout:5000});
+      } else {
+        toast('このブラウザは位置情報に対応していません');
+      }
+    }
+
+    function approve(index){
+      fetch('/approve', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({index})})
+        .then(r=>r.json()).then(()=>{ toast('承認しました'); loadMarkers(); })
+        .catch(()=>toast('承認に失敗しました'));
+    }
+
+    function complete(index){
+      fetch('/delete', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({index})})
+        .then(r=>r.json()).then(()=>{ toast('募集を完了しました'); loadMarkers(); })
+        .catch(()=>toast('削除に失敗しました'));
+    }
+
+    // init on load
+    window.addEventListener('load', initMap);
+  </script>
 </body>
 </html>
