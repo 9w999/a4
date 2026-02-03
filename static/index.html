@@ -1,180 +1,169 @@
-<!DOCTYPE HTML>
-<html>
+<!DOCTYPE html>
+<html lang="ja">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>手伝い募集</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>地域お手伝いマップ</title>
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.8.0/dist/leaflet.css">
-    <script src="https://unpkg.com/leaflet@1.8.0/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <style>
-        body { margin: 0; font-family: sans-serif; }
-        #map { height: 60vh; width: 100%; }
-        select, input {
-            width: 90vw;
-            height: 35px;
-            font-size: 18px;
-            margin: 10px;
-        }
-        button {
-            font-size: 16px;
-            padding: 6px 10px;
-        }
-    </style>
+<style>
+body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    background: #f4f6f8;
+}
+
+header {
+    padding: 12px;
+    font-weight: bold;
+    text-align: center;
+    background: #4caf50;
+    color: #fff;
+}
+
+#map {
+    height: 55vh;
+}
+
+.card {
+    background: #fff;
+    margin: 12px;
+    padding: 16px;
+    border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+label {
+    display: block;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+select, input {
+    width: 100%;
+    height: 40px;
+    font-size: 16px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    padding: 4px 8px;
+}
+
+button {
+    width: 100%;
+    margin-top: 16px;
+    height: 44px;
+    font-size: 17px;
+    font-weight: bold;
+    border-radius: 10px;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+}
+
+.btn-post { background: #4caf50; }
+.btn-approve { background: #ff9800; }
+.btn-complete { background: #2196f3; }
+
+.leaflet-popup-content {
+    font-size: 14px;
+}
+</style>
 </head>
 
 <body>
+
+<header>地域お手伝いマップ</header>
 <div id="map"></div>
 
-<h2>手伝いを呼びかける</h2>
+<div class="card">
+    <label>年齢</label>
+    <select id="age">
+        <option value="">選択してください</option>
+        <option>10代</option><option>20代</option><option>30代</option>
+        <option>40代</option><option>50代</option><option>60代</option>
+        <option>70代</option><option>80代</option><option>90代</option>
+    </select>
 
-<p>年齢：
-<select id="old">
-    <option value="">選択してください</option>
-    <option value="10代">10代</option>
-    <option value="20代">20代</option>
-    <option value="30代">30代</option>
-    <option value="40代">40代</option>
-    <option value="50代">50代</option>
-    <option value="60代">60代</option>
-    <option value="70代">70代</option>
-    <option value="80代">80代</option>
-    <option value="90代">90代</option>
-    <option value="100代以降">100代以降</option>
-</select>
-</p>
+    <label>性別</label>
+    <select id="gender">
+        <option value="">選択してください</option>
+        <option>男性</option><option>女性</option><option>その他</option>
+    </select>
 
-<p>性別：
-<select id="gender">
-    <option value="">選択してください</option>
-    <option value="男性">男性</option>
-    <option value="女性">女性</option>
-    <option value="その他">その他</option>
-</select>
-</p>
+    <label>依頼内容</label>
+    <input id="naiyo" placeholder="例：荷物を運んでほしい">
 
-<p>タイトル：
-<select id="title">
-    <option value="">選択してください</option>
-    <option value="荷物運び">荷物運び</option>
-    <option value="道案内">道案内</option>
-    <option value="家の手伝い">家の手伝い</option>
-    <option value="ごみ捨て">ごみ捨て</option>
-    <option value="その他">その他</option>
-</select>
-</p>
-
-<p>
-<input type="text" id="naiyo" placeholder="募集内容（任意）">
-</p>
-
-<button onclick="buttonClick()">募集する</button>
+    <button class="btn-post" onclick="post()">募集する</button>
+</div>
 
 <script>
 let map;
 
-// ピンの色
-const redIcon = new L.Icon({
-    iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32]
+const red = new L.Icon({ iconUrl:'https://maps.google.com/mapfiles/ms/icons/red-dot.png', iconSize:[32,32] });
+const green = new L.Icon({ iconUrl:'https://maps.google.com/mapfiles/ms/icons/green-dot.png', iconSize:[32,32] });
+
+navigator.geolocation.getCurrentPosition(p => {
+    map = L.map("map").setView([p.coords.latitude, p.coords.longitude], 16);
+    init();
+}, () => {
+    map = L.map("map").setView([35.7,139.49], 15);
+    init();
 });
 
-const greenIcon = new L.Icon({
-    iconUrl: "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32]
-});
+function init(){
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+    load();
+}
 
-document.addEventListener("DOMContentLoaded", () => {
-    map = L.map("map").setView([35.7, 139.49], 15);
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19
-    }).addTo(map);
-
-    navigator.geolocation.getCurrentPosition(pos => {
-        map.setView([pos.coords.latitude, pos.coords.longitude], 16);
+function post(){
+    navigator.geolocation.getCurrentPosition(p=>{
+        fetch("/add",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({
+                lat:p.coords.latitude,
+                lng:p.coords.longitude,
+                age:age.value,
+                gender:gender.value,
+                naiyo:naiyo.value
+            })
+        }).then(()=>load());
     });
+}
 
-    loadMarkers();
-});
+function load(){
+    fetch("/list").then(r=>r.json()).then(data=>{
+        map.eachLayer(l=>{ if(l instanceof L.Marker) map.removeLayer(l); });
 
-function buttonClick() {
-    navigator.geolocation.getCurrentPosition(pos => {
-        const data = {
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude,
-            age: document.getElementById("old").value,
-            gender: document.getElementById("gender").value,
-            title: document.getElementById("title").value,
-            naiyo: document.getElementById("naiyo").value
-        };
+        data.forEach((d,i)=>{
+            const icon = d.approved ? green : red;
+            const btn = d.approved
+                ? `<button class="btn-complete" onclick="finish(${i})">完了</button>`
+                : `<button class="btn-approve" onclick="approve(${i})">承認</button>`;
 
-        fetch("/add", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data)
-        }).then(() => {
-            alert("募集しました");
-            loadMarkers();
+            L.marker([d.lat,d.lng],{icon}).addTo(map)
+            .bindPopup(`
+                <b>${d.age} / ${d.gender}</b><br>
+                ${d.naiyo}<br>${btn}
+            `);
         });
     });
 }
 
-function loadMarkers() {
-    fetch("/list")
-        .then(res => res.json())
-        .then(data => {
-
-            map.eachLayer(layer => {
-                if (layer instanceof L.Marker) map.removeLayer(layer);
-            });
-
-            data.forEach((item, index) => {
-                const icon = item.approved ? greenIcon : redIcon;
-                const marker = L.marker([item.lat, item.lng], { icon }).addTo(map);
-
-                const button = item.approved
-                    ? `<button onclick="complete(${index})">完了</button>`
-                    : `<button onclick="approve(${index})">承認する</button>`;
-
-                marker.bindPopup(`
-                    <p><b>年齢：</b>${item.age}</p>
-                    <p><b>性別：</b>${item.gender}</p>
-                    <p><b>タイトル：</b>${item.title}</p>
-                    <p><b>内容：</b>${item.naiyo}</p>
-                    ${button}
-                `);
-            });
-        });
+function approve(i){
+    fetch("/approve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({index:i})})
+    .then(()=>load());
 }
 
-function approve(index) {
-    fetch("/approve", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ index })
-    }).then(() => {
-        loadMarkers();
-    });
-}
-
-function complete(index) {
-    if (!confirm("この募集を完了して削除しますか？")) return;
-
-    fetch("/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ index })
-    }).then(() => {
-        loadMarkers();
-    });
+function finish(i){
+    if(confirm("募集を完了しますか？")){
+        fetch("/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({index:i})})
+        .then(()=>load());
+    }
 }
 </script>
+
 </body>
 </html>
-
