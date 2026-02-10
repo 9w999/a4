@@ -409,8 +409,12 @@
       toast('自分の位置を非表示にしました');
     }
 
-    // init on load
-    window.addEventListener('load', initMap);
+    // init on load（最初から自分の位置を表示）
+window.addEventListener('load', () => {
+  initMap();
+  showUserLocation(); // ← これを追加
+});
   </script>
 </body>
 </html>
+
