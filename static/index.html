@@ -80,19 +80,52 @@
     /* toast */
     .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:22px;background:rgba(15,23,42,0.9);color:white;padding:10px 14px;border-radius:8px;z-index:2000;display:none}
 
+    /* User location toggle (floating) */
+    .user-toggle{
+      position:fixed;
+      top:12px;
+      right:12px;
+      z-index:1200;
+      background:var(--card);
+      border-radius:10px;
+      box-shadow:0 6px 18px rgba(2,6,23,0.08);
+      padding:8px 10px;
+      display:flex;
+      gap:8px;
+      align-items:center;
+      border:1px solid #e6e9ef;
+      font-weight:600;
+      cursor:pointer;
+      user-select:none;
+    }
+    .user-toggle.active{
+      background:linear-gradient(90deg,var(--accent),#7c3aed);
+      color:white;
+      border-color:transparent;
+    }
+    .user-toggle small{display:block;font-size:11px;color:var(--muted)}
+    .user-toggle.active small{color:rgba(255,255,255,0.9)}
+
     /* responsive */
     @media(max-width:720px){
       .form-card{grid-template-columns:1fr}
       .title{font-size:15px}
       .logo{width:36px;height:36px}
       #map{height:52vh}
+      .user-toggle{top:8px;right:8px;padding:7px 9px}
     }
   </style>
 
 </head>
 <body>
 
-  <div id="map"></div>
+  <div id="map" aria-label="地図"></div>
+
+  <!-- User location toggle -->
+  <button id="userToggle" class="user-toggle" aria-pressed="false" title="自分の現在地を表示/非表示">
+    <span id="userToggleLabel">自分の位置を表示</span>
+    <small id="userToggleSub">オフ</small>
+  </button>
 
   <div class="controls">
     <div class="form-card" role="region" aria-label="募集フォーム">
@@ -156,6 +189,7 @@
     // map & layers
     let map;
     const markersLayer = L.layerGroup();
+    const userLayer = L.layerGroup(); // 自分の位置用レイヤー（マーカーの追加/削除を簡単に）
 
     // icons (use google map marker pngs for simplicity)
     const redIcon = new L.Icon({
@@ -166,6 +200,11 @@
       iconUrl: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
       iconSize: [32,32], iconAnchor: [16,32], popupAnchor: [0,-28]
     });
+
+    // user marker state
+    let userMarker = null;
+    let userWatchId = null;
+    let userShown = false;
 
     function toast(msg, timeout=2200){
       const el = document.getElementById('toast');
@@ -179,19 +218,18 @@
       map = L.map('map', {zoomControl:true, attributionControl:false}).setView([35.7,139.49], 15);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19}).addTo(map);
       markersLayer.addTo(map);
+      userLayer.addTo(map); // userLayerは後で上に表示される
 
-      // try to center on user
-      if(navigator.geolocation){
-        navigator.geolocation.getCurrentPosition(pos => {
-          map.setView([pos.coords.latitude, pos.coords.longitude], 16);
-        }, ()=>{});
-      }
-
+      // try to center on user once (non-forcing) - this will be performed when user requests their location
       loadMarkers();
 
       // refresh markers when map moves (throttle simple)
       let t;
       map.on('moveend', ()=>{ clearTimeout(t); t=setTimeout(loadMarkers,400); });
+
+      // user toggle button binding
+      const userToggle = document.getElementById('userToggle');
+      userToggle.addEventListener('click', toggleUserLocation);
     }
 
     function clearMarkers(){ markersLayer.clearLayers(); }
@@ -282,10 +320,97 @@
         .catch(()=>toast('削除に失敗しました'));
     }
 
+    // --- ユーザーの現在地表示機能 ---
+    function updateToggleUI(shown){
+      const btn = document.getElementById('userToggle');
+      const lbl = document.getElementById('userToggleLabel');
+      const sub = document.getElementById('userToggleSub');
+      if(shown){
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed','true');
+        lbl.textContent = '自分の位置を非表示';
+        sub.textContent = 'オン';
+      } else {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-pressed','false');
+        lbl.textContent = '自分の位置を表示';
+        sub.textContent = 'オフ';
+      }
+    }
+
+    function toggleUserLocation(){
+      if(!userShown){
+        showUserLocation();
+      } else {
+        hideUserLocation();
+      }
+    }
+
+    function showUserLocation(){
+      if(!navigator.geolocation){
+        toast('このブラウザは位置情報に対応していません');
+        return;
+      }
+
+      // まず現在地を一回取得して中心を合わせる
+      navigator.geolocation.getCurrentPosition(pos => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+
+        // create marker if needed
+        if(!userMarker){
+          userMarker = L.circleMarker([lat, lng], {
+            radius: 8,
+            color: '#ffffff',
+            weight: 2,
+            fillColor: getComputedStyle(document.documentElement).getPropertyValue('--accent') || '#2563eb',
+            fillOpacity: 0.95
+          }).addTo(userLayer);
+
+          userMarker.bindPopup('あなたの現在地');
+        } else {
+          userMarker.setLatLng([lat,lng]);
+        }
+
+        // center map to user's position (only on initial show)
+        map.setView([lat, lng], Math.max(map.getZoom(), 15));
+
+        // start watching for updates (so marker follows when moving)
+        if(userWatchId === null){
+          userWatchId = navigator.geolocation.watchPosition(p => {
+            const la = p.coords.latitude;
+            const ln = p.coords.longitude;
+            if(userMarker) userMarker.setLatLng([la, ln]);
+          }, err => {
+            console.warn('watchPosition error', err);
+          }, {enableHighAccuracy:true, maximumAge:5000, timeout:7000});
+        }
+
+        userShown = true;
+        updateToggleUI(true);
+        toast('自分の位置を表示しました');
+      }, err => {
+        console.warn('getCurrentPosition error', err);
+        toast('位置情報を取得できませんでした（許可や端末設定を確認してください）');
+      }, {enableHighAccuracy:true, timeout:7000});
+    }
+
+    function hideUserLocation(){
+      // stop watching
+      if(userWatchId !== null){
+        navigator.geolocation.clearWatch(userWatchId);
+        userWatchId = null;
+      }
+      // remove marker(s)
+      userLayer.clearLayers();
+      userMarker = null;
+      userShown = false;
+      updateToggleUI(false);
+      toast('自分の位置を非表示にしました');
+    }
+
     // init on load
     window.addEventListener('load', initMap);
   </script>
 </body>
 </html>
-
-
