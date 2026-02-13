@@ -121,8 +121,8 @@
     </div>
 
     <div class="legend" aria-hidden="true">
-      <div class="item"><span class="dot red"></span>未承認</div>
-      <div class="item"><span class="dot green"></span>承認済み</div>
+      <div class="item"><span class="dot red"></span>未承諾</div>
+      <div class="item"><span class="dot green"></span>承諾済み</div>
     </div>
   </div>
 
@@ -245,8 +245,8 @@
 
     function approve(index){
       fetch('/approve', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({index})})
-        .then(r=>r.json()).then(()=>{ toast('承認しました'); loadMarkers(); })
-        .catch(()=>toast('承認に失敗しました'));
+        .then(r=>r.json()).then(()=>{ toast('承諾しました'); loadMarkers(); })
+        .catch(()=>toast('承諾に失敗しました'));
     }
 
     function complete(index){
@@ -345,4 +345,5 @@
   </script>
 </body>
 </html>
+
 
