@@ -187,7 +187,7 @@
           pop.appendChild(d);
           const btnWrap = document.createElement('div'); btnWrap.style.marginTop='8px';
           if(!item.approved){
-            const btn = document.createElement('button'); btn.className='popup-btn btn-approve'; btn.textContent='承認する';
+            const btn = document.createElement('button'); btn.className='popup-btn btn-approve'; btn.textContent='承諾';
             btn.onclick = ()=>{ approve(index); };
             btnWrap.appendChild(btn);
           } else {
@@ -345,3 +345,4 @@
   </script>
 </body>
 </html>
+
